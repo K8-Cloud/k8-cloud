@@ -129,7 +129,7 @@ func ReadEKSYaml(f []byte) {
 	S3Name := eksSession.Cloud.Bucket
 
 	//Loading Yaml
-	VPCFile, err := ioutil.ReadFile("vpc-1.yaml")
+	VPCFile, err := ioutil.ReadFile("0001-vpc.yaml")
 	EKSFile, err := ioutil.ReadFile("0005-eks-cluster.yaml")
 	NodeFile, err := ioutil.ReadFile("0007-esk-managed-node-group.yaml")
 	//Add Yaml templates to s3

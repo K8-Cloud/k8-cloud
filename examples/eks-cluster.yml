@@ -1,10 +1,10 @@
 ---
 Cloud:
   Name: AWS
-  Profile: kv2
+  Profile: kv3
   Region: us-east-1
   Cluster: test-eks2
-  Bucket: kuberntes-cluster-setup
+  Bucket: k8-cloud-setup-cluster
 VPC:
   VpcBlock: 10.1.0.0/16
   PublicSubnets:

@@ -23,10 +23,10 @@ github.com/Azure/go-autorest/logger v0.2.0 h1:e4RVHVZKC5p6UANLJHkM4OfR1UKZPj8Wt8
 github.com/Azure/go-autorest/logger v0.2.0/go.mod h1:T9E3cAhj2VqvPOtCYAvby9aBXkZmbF5NWuPV8+WeEW8=
 github.com/Azure/go-autorest/tracing v0.6.0 h1:TYi4+3m5t6K48TGI9AUdb+IzbnSxvnvUMfuitfgcfuo=
 github.com/Azure/go-autorest/tracing v0.6.0/go.mod h1:+vhtPC754Xsa23ID7GlGsrdKBpUA79WCAKPPZVC2DeU=
-github.com/K8-Cloud/k8-cloud/SetupCluster v0.0.0-20201205131017-27f6cf3139a9 h1:xmTooPFd8BxocP+84YxQmkLRnKg/9CVcyQo/4weUzqg=
-github.com/K8-Cloud/k8-cloud/SetupCluster v0.0.0-20201205131017-27f6cf3139a9/go.mod h1:l7IkrBO6Js1GPVOQJszSOFAeb4fgPPn+xltQ4M06xI4=
-github.com/K8-Cloud/k8-cloud/cfts v0.0.0-20201205125837-a4dd84708ec1 h1:rk7UynEQC3onX79LlRdZTYTUeCafZKWMfLeQ44MJH+M=
-github.com/K8-Cloud/k8-cloud/cfts v0.0.0-20201205125837-a4dd84708ec1/go.mod h1:e5dr60pXW2HjJJowH+6eCOgfP/o1h5H2Ahtq8TCOTFg=
+github.com/K8-Cloud/k8-cloud/SetupCluster v0.0.0-20201205132536-4f451b9d6113 h1:1Cyujh6+p9UzRUogfcOrJ8GL9RxJmwuUeF2QSwckfj8=
+github.com/K8-Cloud/k8-cloud/SetupCluster v0.0.0-20201205132536-4f451b9d6113/go.mod h1:l7IkrBO6Js1GPVOQJszSOFAeb4fgPPn+xltQ4M06xI4=
+github.com/K8-Cloud/k8-cloud/cfts v0.0.0-20201205132536-4f451b9d6113 h1:sJAPsWmyyR2pOXrIE+rt3lsJ2f6FkX8Rcp2xCReixIE=
+github.com/K8-Cloud/k8-cloud/cfts v0.0.0-20201205132536-4f451b9d6113/go.mod h1:e5dr60pXW2HjJJowH+6eCOgfP/o1h5H2Ahtq8TCOTFg=
 github.com/aws/aws-sdk-go v1.36.2 h1:UAeFPct+jHqWM+tgiqDrC9/sfbWj6wkcvpsJ+zdcsvA=
 github.com/aws/aws-sdk-go v1.36.2/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -36,6 +36,8 @@ github.com/dimchansky/utfbom v1.1.0 h1:FcM3g+nofKgUteL8dm/UpdRXNC9KmADgTpLKsu0TR
 github.com/dimchansky/utfbom v1.1.0/go.mod h1:rO41eb7gLfo8SF1jd9F8HplJm1Fewwi4mQvIirEdv+8=
 github.com/form3tech-oss/jwt-go v3.2.2+incompatible h1:TcekIExNqud5crz4xD2pavyTgWiPvpYe4Xau31I0PRk=
 github.com/form3tech-oss/jwt-go v3.2.2+incompatible/go.mod h1:pbq4aXjuKjdthFRnoDwaVPLA+WlJuPGy+QneDUgJi2k=
+github.com/go-yaml/yaml v2.1.0+incompatible h1:RYi2hDdss1u4YE7GwixGzWwVo47T8UQwnTLB6vQiq+o=
+github.com/go-yaml/yaml v2.1.0+incompatible/go.mod h1:w2MrLa16VYP0jy6N7M5kHaCkaLENm+P+Tv+MfurjSw0=
 github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=
 github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
 github.com/jmespath/go-jmespath/internal/testify v1.5.1 h1:shLQSRRSCCPj3f2gpwzGwWFoC7ycTf1rcQZHOlsJ6N8=

@@ -20,12 +20,27 @@ Multi Cloud K8s CLuster Setup
 ###Commands:
 #### Setup EKS Cluster
 ```
-./infrastructure -o cluster -c examples/eks-cluster.yml
+./k8-cloud -o cluster -c examples/eks-cluster.yml
 ```
 #### Setup Add-Ons
 ```
-./infrastructure -o setup_addon -c examples/addon.yaml --context test-eks2
+./k8-cloud -o setup_addon -c examples/addon.yaml --context test-eks2
 ``` 
 
 #### Examples
+
+#### TODO
+1. restrict control plane with cidr
+1. Lable nodes
+2. Namespace Quota
+   * resource limits
+   * pods 50
+   * storage 50Gi
+3. a chart
+    * create namespace
+    * user with admin access
+    * user with readonly access
+4. k8s netwok policies
+    
+
 
