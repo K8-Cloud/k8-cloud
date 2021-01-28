@@ -36,6 +36,9 @@ func main() {
 		fmt.Print(config)
 		helmInstallReleases(config, context)
 	}else if operation == "cluster" {
+		getFileFromURL("vpc-1.yaml","https://k8s-cloud-templates.s3.amazonaws.com/vpc-1.yaml")
+		getFileFromURL("0005-eks-cluster.yaml","https://k8s-cloud-templates.s3.amazonaws.com/0005-eks-cluster.yaml")
+		getFileFromURL("0007-esk-managed-node-group.yaml","https://k8s-cloud-templates.s3.amazonaws.com/0007-esk-managed-node-group.yaml")
 		SetupCluster.CheckCluster(yamlFile)
 	} else {
 		fmt.Print("Operation Not Supported")

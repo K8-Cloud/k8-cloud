@@ -14,11 +14,12 @@ func helmInit(context string) {
 
 	checkKubectlExists()
 	checkHelmExists()
+	getFileFromURL("tiller-rbac.yaml","https://k8s-cloud-templates.s3.amazonaws.com/tiller-rbac.yaml")
 
 	cmd := exec.Command("kubectl", "config", "use-context", context)
 	failOnError(cmd)
 
-	cmd = exec.Command("kubectl", "apply", "-f", "resources/tiller-rbac.yaml")
+	cmd = exec.Command("kubectl", "apply", "-f", "tiller-rbac.yaml")
 	failOnError(cmd)
 
 	cmd = exec.Command("helm", "init", "--service-account", "tiller", "--kube-context", context)
