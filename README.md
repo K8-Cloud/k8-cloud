@@ -41,6 +41,7 @@ Multi Cloud K8s CLuster Setup
     * user with admin access
     * user with readonly access
 4. k8s netwok policies
+5. Compare CFT checksum before apply
     
 
 

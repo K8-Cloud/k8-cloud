@@ -1,7 +1,8 @@
-package SetupCluster
+package ekssetup
 
 import (
 	_ "bytes"
+	"encoding/json"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	_ "net/http"
 	//"errors"
@@ -129,7 +130,7 @@ func ReadEKSYaml(f []byte) {
 	S3Name := eksSession.Cloud.Bucket
 
 	//Loading Yaml
-	VPCFile, err := ioutil.ReadFile("0001-vpc.yaml")
+	VPCFile, err := ioutil.ReadFile("vpc-1.yaml")
 	EKSFile, err := ioutil.ReadFile("0005-eks-cluster.yaml")
 	NodeFile, err := ioutil.ReadFile("0007-esk-managed-node-group.yaml")
 	//Add Yaml templates to s3
@@ -913,4 +914,12 @@ func UpdateStack(sess *session.Session, u cftvpc, stack []*awscf.Parameter) *aws
 	return resp
 
 }
-
+func readJSON(path string) (*map[string]interface{}, error) {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Fatalf("failed to read file: %v", err)
+	}
+	contents := make(map[string]interface{})
+	_ = json.Unmarshal(data, &contents)
+	return &contents, nil
+}

@@ -2,6 +2,7 @@ package SetupCluster
 
 import (
 	"fmt"
+	"github.com/K8-Cloud/k8-cloud/SetupCluster/EKS"
 	"gopkg.in/yaml.v2"
 )
 
@@ -36,7 +37,12 @@ func CheckCluster(f []byte) {
 		fmt.Printf("Bucket: %#v\n", cloud.Cloud.Bucket)
 		fmt.Println("Setting up EKS Cluster ........")
 		//Passing cluster file
-		ReadEKSYaml(file)
+		ekssetup.ReadEKSYaml(file)
 	}
 	//End EKS Cluster elements session values
+	if cloud.Cloud.Name == "Azure" {
+		fmt.Printf("Cloud: %#v\n", cloud.Cloud.Name)
+		fmt.Printf("Region: %#v\n", cloud.Cloud.Region)
+		fmt.Println("Setting up AKS Cluster")
+	}
 }

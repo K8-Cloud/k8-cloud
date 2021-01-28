@@ -1,13 +1,22 @@
 package cfts
 
 import (
+	"context"
 	"encoding/json"
 	_ "encoding/json"
 	"fmt"
+	_ "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2017-09-01/network"
+	_ "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2017-05-10/resources"
+	"github.com/Azure/go-autorest/autorest"
+	_ "github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/autorest/azure/auth"
+	_ "github.com/Azure/go-autorest/autorest/to"
 	"github.com/smallfish/simpleyaml"
 	_ "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
+	"os"
 )
 
 var filename = "cf-aws-fmt.yml"
@@ -23,11 +32,11 @@ type Cftvpc struct {
 }
 
 //AKS Vars
-//var (
-//	ctx        = context.Background()
-//	clientData clientInfo
-//	authorizer autorest.Authorizer
-//)
+var (
+	ctx        = context.Background()
+	clientData clientInfo
+	authorizer autorest.Authorizer
+)
 
 type clientInfo struct {
 	SubscriptionID string
@@ -41,6 +50,7 @@ func setupCluster() {
 	////Reading inputs from yaml
 
 	//filename := "cf-aws-fmt.yml" EKS
+	filename := "cf-fmt.yaml-azure" // AKS
 	source, err := ioutil.ReadFile(filename)
 	if err != nil {
 		panic(err)
@@ -53,7 +63,7 @@ func setupCluster() {
 	////Creating Elements
 	//Start EKS Cluster elements
 	//ElementsSubnetIDs := make(map[string]string)
-	var Acceesskey, Secretkey, Region string
+	var Acceesskey, Secretkey, ServicePrinciple, ResourceGroup, Region string
 	//var nodelen int
 	//var nodelist []interface{}
 	//var sess session.Session
@@ -69,12 +79,30 @@ func setupCluster() {
 		Region, _ = yaml.Get("Cloud").Get("Region").String()
 	}
 	//End EKS Cluster elements session values
+	if Cloud == "Azure" {
+		ServicePrinciple, _ = yaml.Get("Cloud").Get("ServicePrinciple").String()
+		ResourceGroup, _ = yaml.Get("Cloud").Get("ResourceGroup").String()
+		Region, _ = yaml.Get("Cloud").Get("Region").String()
+	}
+	//start AKS Cluster session values
+	//Cloud, err := yaml.Get("Cloud").Get("Name").String()
+	//Acceesskey, err := yaml.Get("Cloud").Get("AccessKey").String()
+	//Secretkey, err := yaml.Get("Cloud").Get("SecretAccKey").String()
+	//Region, err := yaml.Get("Cloud").Get("Region").String()
 
 	//Print EKS Cluster elements
 	if Cloud == "AWS" {
 		fmt.Printf("Cloud: %#v\n", Cloud)
 		fmt.Printf("AccessKey: %#v\n", Acceesskey)
 		fmt.Printf("SecAccKey: %#v\n", Secretkey)
+		fmt.Printf("Region: %#v\n", Region)
+		fmt.Printf("Creating sessions")
+	}
+	//Print AKS Cluster elements
+	if Cloud == "Azure" {
+		fmt.Printf("Cloud: %#v\n", Cloud)
+		fmt.Printf("ServicePrinciple: %#v\n", ServicePrinciple)
+		fmt.Printf("ResourceGroup: %#v\n", ResourceGroup)
 		fmt.Printf("Region: %#v\n", Region)
 		fmt.Printf("Creating sessions")
 	}
@@ -89,6 +117,21 @@ func setupCluster() {
 		//})
 	}
 	//End session EKS Cluster elements
+	if Cloud == "Azure" {
+		var err error
+		authorizer, err = auth.NewAuthorizerFromFile(azure.PublicCloud.ResourceManagerEndpoint)
+		if err != nil {
+			log.Fatalf("Failed to get OAuth config: %v", err)
+		}
+
+		authInfo, err := readJSON(os.Getenv("service-principle.auth"))
+		if err != nil {
+			log.Fatalf("Failed to read JSON: %+v", err)
+		}
+		clientData.SubscriptionID = (*authInfo)["subscriptionId"].(string)
+		clientData.VMPassword = (*authInfo)["clientSecret"].(string)
+	}
+
 	fmt.Printf("Session created ")
 
 	////Checking if VPC is enabled
