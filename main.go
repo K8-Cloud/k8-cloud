@@ -22,6 +22,8 @@ func main() {
 	fmt.Printf("Config File: %v\n", configFile)
 	yamlFile, err := ioutil.ReadFile(configFile)
 
+	makeDir("templates")
+
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}
@@ -36,11 +38,13 @@ func main() {
 		fmt.Print(config)
 		helmInstallReleases(config, context)
 	}else if operation == "cluster" {
-		getFileFromURL("vpc-1.yaml","https://k8s-cloud-templates.s3.amazonaws.com/vpc-1.yaml")
-		getFileFromURL("0005-eks-cluster.yaml","https://k8s-cloud-templates.s3.amazonaws.com/0005-eks-cluster.yaml")
-		getFileFromURL("0007-esk-managed-node-group.yaml","https://k8s-cloud-templates.s3.amazonaws.com/0007-esk-managed-node-group.yaml")
+		getFileFromURL("templates/vpc-1.yaml","https://k8s-cloud-templates.s3.amazonaws.com/vpc-1.yaml")
+		getFileFromURL("templates/0005-eks-cluster.yaml","https://k8s-cloud-templates.s3.amazonaws.com/0005-eks-cluster.yaml")
+		getFileFromURL("templates/0007-esk-managed-node-group.yaml","https://k8s-cloud-templates.s3.amazonaws.com/0007-esk-managed-node-group.yaml")
 		SetupCluster.CheckCluster(yamlFile)
 	} else {
 		fmt.Print("Operation Not Supported")
 	}
+
+	deleteDir("templates")
 }

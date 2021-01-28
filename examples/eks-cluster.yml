@@ -3,7 +3,7 @@ Cloud:
   Name: AWS
   Profile: kv3
   Region: us-east-1
-  Cluster: test-eks4
+  Cluster: test-eks5
   Bucket: k8-cloud-setup-cluster
 VPC:
   VpcBlock: 10.1.0.0/16
