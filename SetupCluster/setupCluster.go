@@ -40,9 +40,9 @@ func CheckCluster(f []byte) {
 		ekssetup.ReadEKSYaml(file)
 	}
 	//End EKS Cluster elements session values
-	if cloud.Cloud.Name == "Azure" {
-		fmt.Printf("Cloud: %#v\n", cloud.Cloud.Name)
-		fmt.Printf("Region: %#v\n", cloud.Cloud.Region)
-		fmt.Println("Setting up AKS Cluster")
-	}
+	//if cloud.Cloud.Name == "Azure" {
+	//	fmt.Printf("Cloud: %#v\n", cloud.Cloud.Name)
+	//	fmt.Printf("Region: %#v\n", cloud.Cloud.Region)
+	//	fmt.Println("Setting up AKS Cluster")
+	//}
 }
