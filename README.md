@@ -24,7 +24,7 @@ Multi Cloud K8s CLuster Setup
 ```
 #### Setup Add-Ons
 ```
-./k8-cloud -o setup_addon -c examples/addon.yaml --context test-eks2
+./k8-cloud -o addons -c examples/addon.yaml --context test-eks5
 ``` 
 
 #### Examples
