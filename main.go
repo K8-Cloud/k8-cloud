@@ -27,18 +27,15 @@ func main() {
 	}
 
 	if operation == "addons" {
-	err = yaml.Unmarshal(yamlFile, &configFile)
+		err = yaml.Unmarshal(yamlFile, &config)
 		if err != nil {
 			panic(err)
 		}
-	}else if operation == "setup_addon" {
 		helmInit(context)
 		helmAddRepositories(config)
+		fmt.Print(config)
 		helmInstallReleases(config, context)
-	//}else if operation == "setup_addon3" {
-	//	helm3setup()
-	//	helm3AddRepositories(config)
-	} else if operation == "cluster" {
+	}else if operation == "cluster" {
 		SetupCluster.CheckCluster(yamlFile)
 	} else {
 		fmt.Print("Operation Not Supported")
