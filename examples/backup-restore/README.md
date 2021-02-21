@@ -7,6 +7,8 @@
     * aws role arn if using kube2iam
     * You can also change the backup schedule ant ttl
 * deploy it on the cluster
+
+## TO-DO change helm to other option to the utility
 ```cassandraql
 helm install --name velero --values velero-values.yaml --namespace velero --version 2.3.1 --wait
 ```

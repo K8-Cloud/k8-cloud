@@ -45,3 +45,10 @@ Multi Cloud K8s CLuster Setup
     
 
 
+
+
+### 17/02/2021
+* version command
+* backup enable option with config file  
+* eks cluster creation yaml doc
+* subnets support 4, 6, 8

@@ -7,19 +7,26 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
+	"os"
 )
 
 func main() {
 	var config HelmConfig
 
 	var operation, configFile, context string
+	//var version bool
 
-	flag.StringVar(&operation, "o", "Cluster", "Provide whether operation needed to be performed - Cluster/Addons")
+	flag.StringVar(&operation, "o", "cluster", "Provide whether operation needed to be performed - Cluster/Addons")
 	flag.StringVar(&configFile, "c", "cf-fmt.yaml", "Provide path to Config yaml")
 	flag.StringVar(&context, "context", "minikube", "Provide kubernetes context for addon")
+	version := flag.Bool("version", false, "display version")
 	flag.Parse()
-	fmt.Printf("Operation: %v\n", operation)
-	fmt.Printf("Config File: %v\n", configFile)
+
+	if *version {
+		fmt.Print("k8-cloud version: 0.6.0\n")
+		os.Exit(0)
+	}
+
 	yamlFile, err := ioutil.ReadFile(configFile)
 
 	makeDir("templates")
@@ -42,6 +49,8 @@ func main() {
 		getFileFromURL("templates/0005-eks-cluster.yaml","https://k8s-cloud-templates.s3.amazonaws.com/0005-eks-cluster.yaml")
 		getFileFromURL("templates/0007-esk-managed-node-group.yaml","https://k8s-cloud-templates.s3.amazonaws.com/0007-esk-managed-node-group.yaml")
 		SetupCluster.CheckCluster(yamlFile)
+	} else if operation == "enable_backup" {
+		fmt.Print("Work In Progress\n")
 	} else {
 		fmt.Print("Operation Not Supported")
 	}

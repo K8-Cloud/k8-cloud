@@ -24,6 +24,6 @@ Nodes:
 #  - NodegroupName: nodegroup-2
 #    SubnetIds: [PrivateSubnet01Block, PrivateSubnet02Block]
 #    InstanceTypes: t2.small
-  - NodegroupName: nodegroup-3
-    SubnetIds: [ PrivateSubnet01Block, PrivateSubnet02Block ]
-    InstanceTypes: t2.small
+#  - NodegroupName: nodegroup-3
+#    SubnetIds: [ PrivateSubnet01Block, PrivateSubnet02Block ]
+#    InstanceTypes: t2.small
