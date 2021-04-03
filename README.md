@@ -48,7 +48,10 @@ Multi Cloud K8s CLuster Setup
 
 
 ### 17/02/2021
-* version command
-* backup enable option with config file  
+* version command -- DONE
+* backup take option with config file -- Planning how to implement  
+* subnets support 4, 6, 8 with fixed CFT Samples
 * eks cluster creation yaml doc
-* subnets support 4, 6, 8
+
+## 23/02/2021
+* Azure Support

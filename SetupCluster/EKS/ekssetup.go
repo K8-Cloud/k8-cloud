@@ -4,6 +4,8 @@ import (
 	_ "bytes"
 	"encoding/json"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"io"
+	"net/http"
 	_ "net/http"
 	//"errors"
 	"fmt"
@@ -66,13 +68,43 @@ type Nodevalues struct {
 	SubnetIds     interface{} `yaml:"SubnetIds"`
 }
 
+func DownloadFile(filepath string, url string) error {
+
+	// Get the data
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Create the file
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
+func getFileFromURL(fileName string, fileUrl string)  {
+	err := DownloadFile(fileName, fileUrl)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Downloaded: " + fileUrl)
+
+}
+
 //Setup EKS Cluster
 
 func ReadEKSYaml(f []byte) {
 	////Setting up variables
 	ElementsSubnetIDs := make(map[string]string)
 
-	var MClusterName, vpcsubnets, vpcsecuritygps, vpcclustername, MSubnetIds, Profile, Acceesskey, Secretkey, Region, Cluster, VPCfileName, EksfileName, NodesfileName string
+	var MClusterName, vpcsubnets, vpcsecuritygps, vpcclustername, MSubnetIds, Profile, Acceesskey, Secretkey, Region, Cluster, VPCfileName, EksfileName, NodesfileName,  VPCSourceFile string
 	var nodelen int
 
 	var sess *session.Session
@@ -130,9 +162,9 @@ func ReadEKSYaml(f []byte) {
 	S3Name := eksSession.Cloud.Bucket
 
 	//Loading Yaml
-	VPCFile, err := ioutil.ReadFile("vpc-1.yaml")
-	EKSFile, err := ioutil.ReadFile("0005-eks-cluster.yaml")
-	NodeFile, err := ioutil.ReadFile("0007-esk-managed-node-group.yaml")
+	VPCFile, err := ioutil.ReadFile("templates/0001-vpc.yaml")
+	EKSFile, err := ioutil.ReadFile("templates/0005-eks-cluster.yaml")
+	NodeFile, err := ioutil.ReadFile("templates/0007-esk-managed-node-group.yaml")
 	//Add Yaml templates to s3
 	err, VPCfileName, EksfileName, NodesfileName = AddFileToS3(sess, VPCFile, EKSFile, NodeFile, S3Name, Cluster)
 	if err != nil {
@@ -146,6 +178,25 @@ func ReadEKSYaml(f []byte) {
 		panic(err)
 	}
 	VPCName := eksvpc.VPC.VpcBlock
+	PublicSubnetLen := len(eksvpc.VPC.PublicSubnets)
+	PrivateSubnetLen := len(eksvpc.VPC.PrivateSubnets)
+
+	if PublicSubnetLen != PrivateSubnetLen {
+		fmt.Printf("PublicSubnets and PrivateSubnets count should  be same\n")
+		os.Exit(255)
+	}
+
+	if PublicSubnetLen == 2 {
+		VPCSourceFile = "https://k8s-cloud-templates.s3.amazonaws.com/vpc-4subnets.yaml"
+	} else if PublicSubnetLen == 3 {
+		VPCSourceFile = "https://k8s-cloud-templates.s3.amazonaws.com/vpc-6subnets.yaml"
+	}
+
+	getFileFromURL("templates/0001-vpc.yaml",VPCSourceFile)
+	getFileFromURL("templates/0005-eks-cluster.yaml","https://k8s-cloud-templates.s3.amazonaws.com/0005-eks-cluster.yaml")
+	getFileFromURL("templates/0007-esk-managed-node-group.yaml","https://k8s-cloud-templates.s3.amazonaws.com/0007-esk-managed-node-group.yaml")
+
+
 	if VPCName != "" {
 		fmt.Printf("VPC creation enabled, creating/updating VPC.......\n")
 		vpcsubnets, vpcsecuritygps, vpcclustername, ElementsSubnetIDs = Create_VPC(sess, file, Cluster, S3Name, VPCfileName)

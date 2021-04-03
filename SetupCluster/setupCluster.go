@@ -39,6 +39,8 @@ func CheckCluster(f []byte) {
 		//Passing cluster file
 		ekssetup.ReadEKSYaml(file)
 	}
+
+
 	//End EKS Cluster elements session values
 	//if cloud.Cloud.Name == "Azure" {
 	//	fmt.Printf("Cloud: %#v\n", cloud.Cloud.Name)
