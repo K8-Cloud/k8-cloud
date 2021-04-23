@@ -1,10 +1,9 @@
-package main
+package manageCluster
 
 import "C"
 import (
-    "context"
+	"context"
 	"crypto/rand"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"k8s.io/api/core/v1"
@@ -20,263 +19,285 @@ import (
 	"strings"
 	"text/template"
 )
+
 const storageClassSuffix string = ".storageclass.storage.k8s.io/"
+
 type NameSpaceVals struct {
-	Delete struct{
+	Delete struct {
 		Enable bool `yaml:"Enable"`
 	}
 	NameSpace []struct {
-		Name            string      `yaml:"Name"`
-		ResourceQuota 	string      `yaml:"ResourceQuota"`
-		DefaultQuota    string		`yaml:"DefaultQuota"`
-		Labels         map[string]string `yaml:"Labels"`
+		Name          string            `yaml:"Name"`
+		ResourceQuota string            `yaml:"ResourceQuota"`
+		DefaultQuota  string            `yaml:"DefaultQuota"`
+		Labels        map[string]string `yaml:"Labels"`
 	} `yaml:"NameSpace"`
 }
 type ResourceQuotaVals struct {
-	ResourceQuota []struct{
-		ResourceQuotaName string	`yaml:"QuotaName"`
-		RequestsCPU 	  string	`yaml:"RequestsCPU"`
-		LimitsCPU		  string	`yaml:"LimitsCPU"`
-		RequestsMemory	  string	`yaml:"RequestsMemory"`
-		LimitsMemory      string	`yaml:"LimitsMemory"`
-		Pods			  string	`yaml:"Pods"`
-		RequestsStorage   string	`yaml:"Name"`
-		RequestsEphemeralStorage	string	`yaml:"RequestsStorage"`
-		LimitsEphemeralStorage		string	`yaml:"LimitsEphemeralStorage"`
-		StorageClasses []struct{
-			Name string `yaml:"Name"`
+	ResourceQuota []struct {
+		ResourceQuotaName        string `yaml:"QuotaName"`
+		RequestsCPU              string `yaml:"RequestsCPU"`
+		LimitsCPU                string `yaml:"LimitsCPU"`
+		RequestsMemory           string `yaml:"RequestsMemory"`
+		LimitsMemory             string `yaml:"LimitsMemory"`
+		Pods                     string `yaml:"Pods"`
+		RequestsStorage          string `yaml:"Name"`
+		RequestsEphemeralStorage string `yaml:"RequestsStorage"`
+		LimitsEphemeralStorage   string `yaml:"LimitsEphemeralStorage"`
+		StorageClasses           []struct {
+			Name            string `yaml:"Name"`
 			RequestsStorage string `yaml:"RequestsStorage"`
 		} `yaml:"StorageClasses"`
-		Labels         map[string]string `yaml:"Labels"`
-	}	`yaml:"ResourceQuota"`
+		Labels map[string]string `yaml:"Labels"`
+	} `yaml:"ResourceQuota"`
 }
 type StorageClassVals struct {
-	Delete struct{
+	Delete struct {
 		Enable bool `yaml:"Enable"`
 	} `yaml:"Delete"`
 	StorageClasses []struct {
-		Name              string                      `yaml:"Name"`
-		Provisioner       string                      `yaml:"Provisioner"`
+		Name              string            `yaml:"Name"`
+		Provisioner       string            `yaml:"Provisioner"`
 		Parameters        map[string]string `yaml:"Parameters"`
-		ReclaimPolicy     string                      `yaml:"ReclaimPolicy"`
-		VolumeBindingMode string                      `yaml:"VolumeBindingMode"`
+		ReclaimPolicy     string            `yaml:"ReclaimPolicy"`
+		VolumeBindingMode string            `yaml:"VolumeBindingMode"`
 		Labels            map[string]string `yaml:"Labels"`
 	} `yaml:"StorageClasses"`
 }
 type NameSpaceRoleVals struct {
 	NameSpaceRoleDetails struct {
-		AppendName string `yaml:"AppendName"`
-		Labels     map[string]string `yaml:"Labels"`
-		PolicyRules []struct{
+		AppendName  string            `yaml:"AppendName"`
+		Labels      map[string]string `yaml:"Labels"`
+		PolicyRules []struct {
 			APIGroups []string `yaml:"APIGroups"`
 			Resources []string `yaml:"Resources"`
-			Verbs 	  []string `yaml:"Verbs"`
+			Verbs     []string `yaml:"Verbs"`
 		} `yaml:"PolicyRules"`
 	} `yaml:"NameSpaceRoleDetails"`
 }
 type DefaultQuotaVals struct {
 	DefaultQuota struct {
 		Details []struct {
-			Name                 v1.LimitType                 `yaml:"Name"`
-			Max                  map[v1.ResourceName]resource.Quantity  `yaml:"max"`
-			Min                  map[v1.ResourceName]resource.Quantity  `yaml:"min"`
-			Default              map[v1.ResourceName]resource.Quantity  `yaml:"default,omitempty"`
-			DefaultRequest       map[v1.ResourceName]resource.Quantity  `yaml:"defaultRequest,omitempty"`
-			MaxLimitRequestRatio map[v1.ResourceName]resource.Quantity  `yaml:"Details"`
+			Name                 v1.LimitType                          `yaml:"Name"`
+			Max                  map[v1.ResourceName]resource.Quantity `yaml:"max"`
+			Min                  map[v1.ResourceName]resource.Quantity `yaml:"min"`
+			Default              map[v1.ResourceName]resource.Quantity `yaml:"default,omitempty"`
+			DefaultRequest       map[v1.ResourceName]resource.Quantity `yaml:"defaultRequest,omitempty"`
+			MaxLimitRequestRatio map[v1.ResourceName]resource.Quantity `yaml:"Details"`
 		} `yaml:"Details"`
-		Labels  map[string]string `yaml:"Labels"`
+		Labels map[string]string `yaml:"Labels"`
 	} `yaml:"DefaultQuota"`
 }
-type InitialConfigVals struct {
-	ClusterDetails struct {
-		ClusterName       string `yaml:"ClusterName"`
-		MasterKey         string `yaml:"Masterkey"`
-		MasterUrl         string `yaml:"Masterurl"`
-		KubeConfig        string `yaml:"kubeconfig"`
-		Configs           string `yaml:"Configs"`
-		StorageClassFile  string  `yaml:"StorageClassesFile"`
-		NameSpaceFile     string `yaml:"NameSpaceFile"`
-		ResourceQuotaFile string `yaml:"ResourceQuotaFile"`
-	} `yaml:"ClusterDetails"`
-}
-func main()  {
 
-	//https://192.168.56.2:6443
-	var clustername, masterurl, kubeconfig, operation string
-	var InitialConfigVals InitialConfigVals
+//type InitialConfigVals struct {
+//	ClusterDetails struct {
+//		ClusterName       string `yaml:"ClusterName"`
+//		MasterKey         string `yaml:"Masterkey"`
+//		MasterUrl         string `yaml:"Masterurl"`
+//		KubeConfig        string `yaml:"kubeconfig"`
+//		Configs           string `yaml:"Configs"`
+//		StorageClassFile  string  `yaml:"StorageClassesFile"`
+//		NameSpaceFile     string `yaml:"NameSpaceFile"`
+//		ResourceQuotaFile string `yaml:"ResourceQuotaFile"`
+//	} `yaml:"ClusterDetails"`
+//}
 
-	flag.StringVar(&clustername, "k", "dev-cluster", "Provide cluster name")
-	flag.StringVar(&operation, "o", "all", "Provide the operation that needs to be performed, valid inputs - namespace, storage, resourcequota, defaultquota, serviceaccount")
-	flag.StringVar(&masterurl, "u", "https://localhost:6443", "Provide master url")
-	flag.StringVar(&kubeconfig, "c", "~/.kube/config", "Provide path to kubeconfig")
+//func main()  {
+//
+//	//https://192.168.56.2:6443
+//	var clustername, masterurl, kubeconfig, operation string
+//	var InitialConfigVals InitialConfigVals
+//
+//	flag.StringVar(&clustername, "k", "dev-cluster", "Provide cluster name")
+//	flag.StringVar(&operation, "o", "all", "Provide the operation that needs to be performed, valid inputs - namespace, storage, resourcequota, defaultquota, serviceaccount")
+//	flag.StringVar(&masterurl, "u", "https://localhost:6443", "Provide master url")
+//	flag.StringVar(&kubeconfig, "c", "~/.kube/config", "Provide path to kubeconfig")
+//
+//	filePath := "~/K8Cli"+"/mgmt/"+clustername
+//
+//	InitClusterConfig, err := ioutil.ReadFile(filePath+"/config.yaml")
+//	if err != nil {
+//		fmt.Println(err)
+//		//panic(err)
+//	}
+//	err = yaml.Unmarshal([]byte(InitClusterConfig), &InitialConfigVals)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	flag.Parse()
+//
+//	fmt.Printf("Operation: %v\n", operation)
+//
+//
+//
+//	if operation == "all"{
+//
+//		fmt.Println("Setting up Connection")
+//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
+//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
+//		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
+//
+//		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
+//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
+//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
+//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
+//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
+//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
+//
+//		fmt.Println("Executing Create or Update StorageClasses")
+//		CreateorUpdateStorageClass(InitialConfigVals.ClusterDetails.StorageClassFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//		fmt.Println("Executing Create or Update NameSpaces")
+//		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//		fmt.Println("Executing Create or Update DefaultQuotas")
+//		CreateorUpdateDefaultQuota(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//		fmt.Println("Executing Create or Update ResourceQuotas")
+//		CreateorUpdateResourceQuota (InitialConfigVals.ClusterDetails.ResourceQuotaFile, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//
+//		fmt.Println("Executing Create or Update NameSpaceUsers")
+//		CreateorUpdateNameSpaceUser(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//	} else if operation == "namespace" {
+//
+//		fmt.Println("Setting up Connection")
+//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
+//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
+//		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
+//
+//		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
+//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
+//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
+//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
+//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
+//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
+//		fmt.Println("Executing Create or Update NameSpaces")
+//		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//	} else if operation == "storage" {
+//
+//		fmt.Println("Setting up Connection")
+//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
+//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
+//		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
+//
+//		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
+//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
+//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
+//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
+//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
+//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
+//
+//		fmt.Println("Executing Create or Update StorageClasses")
+//		CreateorUpdateStorageClass(InitialConfigVals.ClusterDetails.StorageClassFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//	} else if operation == "resourcequota" {
+//
+//		fmt.Println("Setting up Connection")
+//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
+//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
+//		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
+//
+//		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
+//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
+//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
+//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
+//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
+//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
+//
+//		fmt.Println("Executing Create or Update NameSpaces")
+//		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//		fmt.Println("Executing Create or Update DefaultQuotas")
+//		CreateorUpdateDefaultQuota(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//		fmt.Println("Executing Create or Update ResourceQuotas")
+//		CreateorUpdateResourceQuota(InitialConfigVals.ClusterDetails.ResourceQuotaFile, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//	} else if operation == "defaultquota" {
+//
+//		fmt.Println("Setting up Connection")
+//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
+//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
+//		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
+//
+//		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
+//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
+//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
+//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
+//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
+//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
+//
+//		fmt.Println("Executing Create or Update NameSpaces")
+//		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//		fmt.Println("Executing Create or Update DefaultQuotas")
+//		CreateorUpdateDefaultQuota(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//	} else if operation == "serviceaccount" {
+//
+//		fmt.Println("Setting up Connection")
+//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
+//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
+//		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
+//
+//		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
+//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
+//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
+//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
+//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
+//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
+//
+//		fmt.Println("Executing Create or Update NameSpaces")
+//		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//		fmt.Println("Executing Create or Update NameSpaceUsers")
+//		CreateorUpdateNameSpaceUser(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
+//
+//	} else if operation == "init" {
+//
+//		fmt.Println("Initializing K8Cli")
+//
+//		fmt.Printf("ClusterName: %v\n", &clustername)
+//		fmt.Printf("masterurl: %v\n", masterurl)
+//		fmt.Printf("kubeconfig: %v\n", kubeconfig)
+//
+//		Init(clustername, masterurl, kubeconfig)
+//
+//	} else {
+//
+//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
+//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
+//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
+//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
+//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
+//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
+//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
+//		fmt.Println("Provide Valid input operation")
+//	}
+//
+//}
 
-	filePath := "~/.K8Cli"+"/mgmt/"+clustername
+//func InitManageCluster(InitialConfigVals InitialConfigVals)  {
+//
+//	fmt.Println("Setting up Connection")
+//	fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
+//	fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
+//	connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
+//
+//	fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
+//	fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
+//	fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
+//	fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
+//	fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
+//	fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
+//	return connection
+//
+//}
 
-	InitClusterConfig, err := ioutil.ReadFile(filePath+"/config.yaml")
-	if err != nil {
-		fmt.Println(err)
-		//panic(err)
-	}
-	err = yaml.Unmarshal([]byte(InitClusterConfig), &InitialConfigVals)
-	if err != nil {
-		panic(err)
-	}
-
-	flag.Parse()
-
-	fmt.Printf("Operation: %v\n", operation)
-
-
-
-	if operation == "all"{
-
-		fmt.Println("Setting up Connection")
-		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
-
-		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
-		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-
-		fmt.Println("Executing Create or Update StorageClasses")
-		CreateorUpdateStorageClass(InitialConfigVals.ClusterDetails.StorageClassFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-		fmt.Println("Executing Create or Update NameSpaces")
-		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-		fmt.Println("Executing Create or Update DefaultQuotas")
-		CreateorUpdateDefaultQuota(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-		fmt.Println("Executing Create or Update ResourceQuotas")
-		CreateorUpdateResourceQuota (InitialConfigVals.ClusterDetails.ResourceQuotaFile, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-
-		fmt.Println("Executing Create or Update NameSpaceUsers")
-		CreateorUpdateNameSpaceUser(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-	} else if operation == "namespace" {
-
-		fmt.Println("Setting up Connection")
-		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
-
-		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
-		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-		fmt.Println("Executing Create or Update NameSpaces")
-		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-	} else if operation == "storage" {
-
-		fmt.Println("Setting up Connection")
-		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
-
-		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
-		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-
-		fmt.Println("Executing Create or Update StorageClasses")
-		CreateorUpdateStorageClass(InitialConfigVals.ClusterDetails.StorageClassFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-	} else if operation == "resourcequota" {
-
-		fmt.Println("Setting up Connection")
-		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
-
-		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
-		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-
-		fmt.Println("Executing Create or Update NameSpaces")
-		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-		fmt.Println("Executing Create or Update DefaultQuotas")
-		CreateorUpdateDefaultQuota(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-		fmt.Println("Executing Create or Update ResourceQuotas")
-		CreateorUpdateResourceQuota(InitialConfigVals.ClusterDetails.ResourceQuotaFile, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-	} else if operation == "defaultquota" {
-
-		fmt.Println("Setting up Connection")
-		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
-
-		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
-		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-
-		fmt.Println("Executing Create or Update NameSpaces")
-		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-		fmt.Println("Executing Create or Update DefaultQuotas")
-		CreateorUpdateDefaultQuota(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-	} else if operation == "serviceaccount" {
-
-		fmt.Println("Setting up Connection")
-		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
-
-		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
-		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-
-		fmt.Println("Executing Create or Update NameSpaces")
-		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-		fmt.Println("Executing Create or Update NameSpaceUsers")
-		CreateorUpdateNameSpaceUser(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-
-	} else if operation == "init" {
-
-		fmt.Println("Initializing K8Cli")
-
-		fmt.Printf("ClusterName: %v\n", &clustername)
-		fmt.Printf("masterurl: %v\n", masterurl)
-		fmt.Printf("kubeconfig: %v\n", kubeconfig)
-
-		Init(clustername, masterurl, kubeconfig)
-
-	} else {
-
-		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-		fmt.Println("Provide Valid input operation")
-	}
-
-}
 func SetupConnection(url string, kubeconfig string) (*kubernetes.Clientset, error) {
 
 	config, err := clientcmd.BuildConfigFromFlags(url, kubeconfig)
@@ -310,7 +331,7 @@ func CreateorUpdateStorageClass(config string, connection *kubernetes.Clientset,
 	}
 
 	var reclaimPolicy v1.PersistentVolumeReclaimPolicy
-	var vbmode 	storagev1.VolumeBindingMode
+	var vbmode storagev1.VolumeBindingMode
 	var name, Provisioner string
 	LenSC := len(StorageClassVals.StorageClasses)
 
@@ -364,15 +385,15 @@ func CreateorUpdateStorageClass(config string, connection *kubernetes.Clientset,
 		if StorageClassVals.Delete.Enable == true {
 			fmt.Println("Removing StorageClasses from Clusters")
 			for j := 0; j < listsc; j++ {
-						fmt.Println("StorageClass not needed, deleting....: ", ListSC.Items[j].Name)
-						DeleteSC := con.StorageV1().StorageClasses().Delete(context.TODO(), ListSC.Items[j].Name, metav1.DeleteOptions{})
-						fmt.Println(DeleteSC)
-					}
-			}
-		} else {
-			for j := 0; j < listsc; j++ {
 				fmt.Println("StorageClass not needed, deleting....: ", ListSC.Items[j].Name)
-				fmt.Println("Removing StorageClasses is not enabled")
+				DeleteSC := con.StorageV1().StorageClasses().Delete(context.TODO(), ListSC.Items[j].Name, metav1.DeleteOptions{})
+				fmt.Println(DeleteSC)
+			}
+		}
+	} else {
+		for j := 0; j < listsc; j++ {
+			fmt.Println("StorageClass not needed, deleting....: ", ListSC.Items[j].Name)
+			fmt.Println("Removing StorageClasses is not enabled")
 		}
 
 	}
@@ -396,7 +417,7 @@ func CreateorUpdateStorageClass(config string, connection *kubernetes.Clientset,
 
 		if StorageClassVals.StorageClasses[i].ReclaimPolicy == "" {
 			reclaimPolicy = v1.PersistentVolumeReclaimRetain
-		} else if StorageClassVals.StorageClasses[i].ReclaimPolicy == "Retain"{
+		} else if StorageClassVals.StorageClasses[i].ReclaimPolicy == "Retain" {
 			reclaimPolicy = v1.PersistentVolumeReclaimRetain
 		} else if StorageClassVals.StorageClasses[i].ReclaimPolicy == "Recycle" {
 			reclaimPolicy = v1.PersistentVolumeReclaimRecycle
@@ -410,7 +431,7 @@ func CreateorUpdateStorageClass(config string, connection *kubernetes.Clientset,
 		//vbmode := storagev1.VolumeBindingImmediate
 		if StorageClassVals.StorageClasses[i].VolumeBindingMode == "" {
 			vbmode = storagev1.VolumeBindingWaitForFirstConsumer
-		} else if StorageClassVals.StorageClasses[i].VolumeBindingMode == "Immediate"{
+		} else if StorageClassVals.StorageClasses[i].VolumeBindingMode == "Immediate" {
 			vbmode = storagev1.VolumeBindingImmediate
 		} else if StorageClassVals.StorageClasses[i].VolumeBindingMode == "WaitForConsumer" {
 			vbmode = storagev1.VolumeBindingWaitForFirstConsumer
@@ -440,9 +461,9 @@ func CreateorUpdateStorageClass(config string, connection *kubernetes.Clientset,
 				Name:   name,
 				Labels: mapLabels,
 			},
-			Provisioner: Provisioner,
-			Parameters:  mapParams,
-			ReclaimPolicy: &reclaimPolicy,
+			Provisioner:       Provisioner,
+			Parameters:        mapParams,
+			ReclaimPolicy:     &reclaimPolicy,
 			VolumeBindingMode: &vbmode,
 		}
 
@@ -468,13 +489,13 @@ func CreateorUpdateStorageClass(config string, connection *kubernetes.Clientset,
 					Name:   name,
 					Labels: mapLabels,
 				},
-				Provisioner: Provisioner,
-				ReclaimPolicy: &reclaimPolicy,
-				Parameters:  mapParams,
+				Provisioner:       Provisioner,
+				ReclaimPolicy:     &reclaimPolicy,
+				Parameters:        mapParams,
 				VolumeBindingMode: &vbmode,
 			}
 			UpdateSC, err := con.StorageV1().StorageClasses().Update(context.TODO(), &storageclassjsonupdate, metav1.UpdateOptions{})
-			if err != nil{
+			if err != nil {
 				fmt.Println(err)
 			} else {
 				fmt.Println("Updated StorageClass : ", UpdateSC.Name)
@@ -521,7 +542,6 @@ func CreateorUpdateNameSpace(namespaceyaml string, connection *kubernetes.Client
 		fmt.Println("NameSpaces Managed by cli: ", ListNS.Items[i].Name)
 		//fmt.Println(ListSC.Items[i].Labels)
 	}
-
 
 	if lenNs != 0 && listns > lenNs {
 		if NameSpaceVals.Delete.Enable == true {
@@ -570,7 +590,7 @@ func CreateorUpdateNameSpace(namespaceyaml string, connection *kubernetes.Client
 		return nil
 	}
 
- //Create or Update NameSpace
+	//Create or Update NameSpace
 
 	for i := 0; i < lenNs; i++ {
 
@@ -606,12 +626,11 @@ func CreateorUpdateNameSpace(namespaceyaml string, connection *kubernetes.Client
 			fmt.Println(err)
 			fmt.Println("Updating NameSpace........")
 			UpdateNameSpace, _ := con.CoreV1().Namespaces().Update(context.TODO(), &namespacejson, metav1.UpdateOptions{})
-			if err != nil{
+			if err != nil {
 				fmt.Println(err)
 			} else {
 				fmt.Println("Updated NameSpace: ", UpdateNameSpace.Name)
 			}
-
 
 		} else {
 			println("Created NameSpace : ", CreateNameSpace.Name)
@@ -639,7 +658,6 @@ func CreateorUpdateResourceQuota(resourcequotayaml string, namespaceyaml string,
 		strValue := fmt.Sprintf("%v", value)
 		mapLabels[strKey] = strValue
 	}
-
 
 	fileNameSpace, err := ioutil.ReadFile(namespaceyaml)
 	if err != nil {
@@ -678,7 +696,6 @@ func CreateorUpdateResourceQuota(resourcequotayaml string, namespaceyaml string,
 		fmt.Println("NameSpace Selected - ID: ", i)
 		fmt.Println("NameSpace Selected - Name: ", NameSpaceVals.NameSpace[i].Name)
 		fmt.Println("NameSpace Selected - Labels: ", mapLabels)
-
 
 		if LenRQ == 0 {
 			fmt.Println("Resource Quotas list is not provided")
@@ -810,11 +827,10 @@ func CreateorUpdateResourceQuota(resourcequotayaml string, namespaceyaml string,
 			}
 
 			fmt.Println("Resource ID: ", i)
-			fmt.Println("Resource Name: ", NameSpaceVals.NameSpace[i].Name + "-resquota")
+			fmt.Println("Resource Name: ", NameSpaceVals.NameSpace[i].Name+"-resquota")
 			fmt.Println("Resource NameSpace: ", NameSpaceVals.NameSpace[i].Name)
 			fmt.Println("Resource Labels: ", mapLabels)
 			fmt.Println("Resource Hard Limits: ", arrayresult3)
-
 
 			CreateResourceQuota, err = con.CoreV1().ResourceQuotas(NameSpaceVals.NameSpace[i].Name).Create(context.TODO(), &resourcequotajson, metav1.CreateOptions{})
 
@@ -822,7 +838,7 @@ func CreateorUpdateResourceQuota(resourcequotayaml string, namespaceyaml string,
 				fmt.Println(err)
 				fmt.Println("Updating ResourceQuota........")
 				UpdateResourceQuota, err = con.CoreV1().ResourceQuotas(NameSpaceVals.NameSpace[i].Name).Update(context.TODO(), &resourcequotajson, metav1.UpdateOptions{})
-				if err != nil{
+				if err != nil {
 					fmt.Println(err)
 				} else {
 					fmt.Println("Updated ResourceQuota: ", UpdateResourceQuota.Name)
@@ -850,7 +866,7 @@ func CreateorUpdateDefaultQuota(config string, namespaceyaml string, connection 
 		panic(err)
 	}
 
-	fileNameSpace, err = ioutil.ReadFile(config+"/DefaultQuota.yaml")
+	fileNameSpace, err = ioutil.ReadFile(config + "/DefaultQuota.yaml")
 	if err != nil {
 		fmt.Println(err)
 		//panic(err)
@@ -865,7 +881,6 @@ func CreateorUpdateDefaultQuota(config string, namespaceyaml string, connection 
 	//fmt.Println(LenLR)
 	mapLabels := make(map[string]string)
 
-
 	m := make(map[string]string)
 	m["MasterKey"] = key
 
@@ -874,7 +889,6 @@ func CreateorUpdateDefaultQuota(config string, namespaceyaml string, connection 
 		strValue := fmt.Sprintf("%v", value)
 		mapLabels[strKey] = strValue
 	}
-
 
 	LimitRangeItem := make([]v1.LimitRangeItem, LenLR)
 
@@ -916,8 +930,7 @@ func CreateorUpdateDefaultQuota(config string, namespaceyaml string, connection 
 			},
 		}
 
-
-		fmt.Println("DefaultQuota Name ", NameSpaceVals.NameSpace[i].Name + "-defaultquota")
+		fmt.Println("DefaultQuota Name ", NameSpaceVals.NameSpace[i].Name+"-defaultquota")
 		fmt.Println("DefaultQuota NameSpace: ", NameSpaceVals.NameSpace[i].Name)
 		fmt.Println("DefaultQuota Labels: ", mapLabels)
 		fmt.Println("DefaultQuota LimitRanges: ", LimitRangeItem)
@@ -927,7 +940,7 @@ func CreateorUpdateDefaultQuota(config string, namespaceyaml string, connection 
 			fmt.Println(err)
 			fmt.Println("Updating ServiceAccount.....")
 			UpdateSerAcc, _ := con.CoreV1().LimitRanges(NameSpaceVals.NameSpace[i].Name).Update(context.TODO(), &defaultquotajson, metav1.UpdateOptions{})
-			if err != nil{
+			if err != nil {
 				fmt.Println(err)
 			} else {
 				fmt.Println("Updated ServiceAccount: ", UpdateSerAcc.Name)
@@ -963,7 +976,7 @@ func CreateorUpdateNameSpaceUser(config string, namespaceyaml string, connection
 		panic(err)
 	}
 
-	fileNameSpace, err = ioutil.ReadFile(config+"/DefaultNameSpaceRole.yaml")
+	fileNameSpace, err = ioutil.ReadFile(config + "/DefaultNameSpaceRole.yaml")
 	if err != nil {
 		fmt.Println(err)
 		//panic(err)
@@ -984,7 +997,7 @@ func CreateorUpdateNameSpaceUser(config string, namespaceyaml string, connection
 	PolicyRule := make([]rbacv1.PolicyRule, int(lenPL))
 	for j := 0; j < lenPL; j++ {
 		PolicyRule[j] = rbacv1.PolicyRule{
-			Verbs: NameSpaceRoleVals.NameSpaceRoleDetails.PolicyRules[j].Verbs,
+			Verbs:     NameSpaceRoleVals.NameSpaceRoleDetails.PolicyRules[j].Verbs,
 			APIGroups: NameSpaceRoleVals.NameSpaceRoleDetails.PolicyRules[j].APIGroups,
 			Resources: NameSpaceRoleVals.NameSpaceRoleDetails.PolicyRules[j].Resources,
 		}
@@ -1007,8 +1020,8 @@ func CreateorUpdateNameSpaceUser(config string, namespaceyaml string, connection
 				APIVersion: "v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name: NameSpaceVals.NameSpace[i].Name+"-"+NameSpaceRoleVals.NameSpaceRoleDetails.AppendName+"-sericeaccount",
-				Labels: mapLabels,
+				Name:      NameSpaceVals.NameSpace[i].Name + "-" + NameSpaceRoleVals.NameSpaceRoleDetails.AppendName + "-sericeaccount",
+				Labels:    mapLabels,
 				Namespace: NameSpaceVals.NameSpace[i].Name,
 			},
 		}
@@ -1023,27 +1036,27 @@ func CreateorUpdateNameSpaceUser(config string, namespaceyaml string, connection
 			fmt.Println(err)
 			fmt.Println("Updating ServiceAccount.......")
 			UpdateSerAcc, _ := con.CoreV1().ServiceAccounts(NameSpaceVals.NameSpace[i].Name).Update(context.TODO(), &sajson, metav1.UpdateOptions{})
-			if err != nil{
+			if err != nil {
 				fmt.Println(err)
 			} else {
 				fmt.Println("Updated ServiceAccount: ", UpdateSerAcc.Name)
 			}
 		} else {
-		fmt.Println("Created ServiceAccount: ", CreateSerAcc.Name)
+			fmt.Println("Created ServiceAccount: ", CreateSerAcc.Name)
 		}
 
 		// Attaching Role
 
 		rolejson := rbacv1.Role{
-				TypeMeta: metav1.TypeMeta{
+			TypeMeta: metav1.TypeMeta{
 				Kind:       "Role",
 				APIVersion: "rbac.authorization.k8s.io/v1beta1",
-		},
+			},
 			ObjectMeta: metav1.ObjectMeta{
-			Name:      NameSpaceVals.NameSpace[i].Name+"-"+NameSpaceRoleVals.NameSpaceRoleDetails.AppendName+"-role",
-			Labels: mapLabels,
-			Namespace: NameSpaceVals.NameSpace[i].Name,
-				},
+				Name:      NameSpaceVals.NameSpace[i].Name + "-" + NameSpaceRoleVals.NameSpaceRoleDetails.AppendName + "-role",
+				Labels:    mapLabels,
+				Namespace: NameSpaceVals.NameSpace[i].Name,
+			},
 			Rules: PolicyRule,
 		}
 
@@ -1052,42 +1065,42 @@ func CreateorUpdateNameSpaceUser(config string, namespaceyaml string, connection
 		fmt.Println("Role NameSpace: ", NameSpaceVals.NameSpace[i].Name)
 		fmt.Println("Role PolicyRule: ", PolicyRule)
 
-			CreateRole, err := con.RbacV1().Roles(NameSpaceVals.NameSpace[i].Name).Create(context.TODO(), &rolejson, metav1.CreateOptions{})
+		CreateRole, err := con.RbacV1().Roles(NameSpaceVals.NameSpace[i].Name).Create(context.TODO(), &rolejson, metav1.CreateOptions{})
+		if err != nil {
+			fmt.Println(err)
+			fmt.Println("Updating Role........")
+			UpateRole, _ := con.RbacV1().Roles(NameSpaceVals.NameSpace[i].Name).Update(context.TODO(), &rolejson, metav1.UpdateOptions{})
 			if err != nil {
 				fmt.Println(err)
-				fmt.Println("Updating Role........")
-				UpateRole, _ := con.RbacV1().Roles(NameSpaceVals.NameSpace[i].Name).Update(context.TODO(), &rolejson, metav1.UpdateOptions{})
-				if err != nil{
-					fmt.Println(err)
-				}
-				fmt.Println("Updated Role: ", UpateRole.Name )
-			} else {
-				fmt.Println("Created Role: ", CreateRole.Name)
 			}
+			fmt.Println("Updated Role: ", UpateRole.Name)
+		} else {
+			fmt.Println("Created Role: ", CreateRole.Name)
+		}
 
-			rolebdjson := rbacv1.RoleBinding{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "RoleBinding",
-					APIVersion: "rbac.authorization.k8s.io/v1beta1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: NameSpaceVals.NameSpace[i].Name+"-"+NameSpaceRoleVals.NameSpaceRoleDetails.AppendName+"-rolebinding",
-					Labels: mapLabels,
+		rolebdjson := rbacv1.RoleBinding{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "RoleBinding",
+				APIVersion: "rbac.authorization.k8s.io/v1beta1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      NameSpaceVals.NameSpace[i].Name + "-" + NameSpaceRoleVals.NameSpaceRoleDetails.AppendName + "-rolebinding",
+				Labels:    mapLabels,
+				Namespace: NameSpaceVals.NameSpace[i].Name,
+			},
+			Subjects: []rbacv1.Subject{
+				rbacv1.Subject{
+					Kind:      "ServiceAccount",
 					Namespace: NameSpaceVals.NameSpace[i].Name,
+					Name:      NameSpaceVals.NameSpace[i].Name + "-" + NameSpaceRoleVals.NameSpaceRoleDetails.AppendName + "-sericeaccount",
 				},
-				Subjects: []rbacv1.Subject{
-					rbacv1.Subject{
-						Kind:      "ServiceAccount",
-						Namespace: NameSpaceVals.NameSpace[i].Name,
-						Name:      NameSpaceVals.NameSpace[i].Name+"-"+NameSpaceRoleVals.NameSpaceRoleDetails.AppendName+"-sericeaccount",
-					},
-				},
-				RoleRef: rbacv1.RoleRef{
-						APIGroup: "rbac.authorization.k8s.io",
-						Kind: "Role",
-						Name: NameSpaceVals.NameSpace[i].Name+"-"+NameSpaceRoleVals.NameSpaceRoleDetails.AppendName+"-sericeaccount",
-				},
-			}
+			},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Role",
+				Name:     NameSpaceVals.NameSpace[i].Name + "-" + NameSpaceRoleVals.NameSpaceRoleDetails.AppendName + "-sericeaccount",
+			},
+		}
 
 		fmt.Println("RoleBinding Name: ", NameSpaceVals.NameSpace[i].Name+"-"+NameSpaceRoleVals.NameSpaceRoleDetails.AppendName+"-rolebinding")
 		fmt.Println("RoleBinding Labels: ", mapLabels)
@@ -1095,21 +1108,21 @@ func CreateorUpdateNameSpaceUser(config string, namespaceyaml string, connection
 		fmt.Println("RoleBinding ServiceAccount: ", NameSpaceVals.NameSpace[i].Name+"-"+NameSpaceRoleVals.NameSpaceRoleDetails.AppendName+"-sericeaccount")
 		fmt.Println("RoleBinding Role: ", NameSpaceVals.NameSpace[i].Name+"-"+NameSpaceRoleVals.NameSpaceRoleDetails.AppendName+"-sericeaccount")
 
-			CreateRoleBinding, err := con.RbacV1().RoleBindings(NameSpaceVals.NameSpace[i].Name).Create(context.TODO(), &rolebdjson, metav1.CreateOptions{})
+		CreateRoleBinding, err := con.RbacV1().RoleBindings(NameSpaceVals.NameSpace[i].Name).Create(context.TODO(), &rolebdjson, metav1.CreateOptions{})
+		if err != nil {
+			fmt.Println(err)
+			fmt.Println("Updating RoleBinding........")
+			UpdateRoleBinding, _ := con.RbacV1().RoleBindings(NameSpaceVals.NameSpace[i].Name).Update(context.TODO(), &rolebdjson, metav1.UpdateOptions{})
 			if err != nil {
 				fmt.Println(err)
-				fmt.Println("Updating RoleBinding........")
-				UpdateRoleBinding, _ := con.RbacV1().RoleBindings(NameSpaceVals.NameSpace[i].Name).Update(context.TODO(), &rolebdjson, metav1.UpdateOptions{})
-				if err != nil{
-					fmt.Println(err)
-				} else {
-					fmt.Println("Updated RoleBinding: ", UpdateRoleBinding.Name)
-				}
-				//return nil
 			} else {
-				fmt.Println("Created RoleBinding: ", CreateRoleBinding.Name)
+				fmt.Println("Updated RoleBinding: ", UpdateRoleBinding.Name)
 			}
+			//return nil
+		} else {
+			fmt.Println("Created RoleBinding: ", CreateRoleBinding.Name)
 		}
+	}
 
 	return err
 }
@@ -1119,16 +1132,16 @@ func V1ResourceByStorageClass(storageClass string, resourceName v1.ResourceName)
 func Init(clustername string, masterurl string, kubeconfig string) (err error) {
 
 	// Variables - host, namespace
-	filePath := "~/.K8Cli"+"/mgmt/"+clustername
-	mgmtpath := "~/K8Cli/mgmt/"+clustername
-	configpath := "~/K8Cli/mgmt/"+clustername+"/configs"
-	storageclasspath := "~/K8Cli/mgmt/"+clustername+"/StorageClasses"
-	namespacepath := "~/K8Cli/mgmt/"+clustername+"/NameSpaces"
-	resourcequotapath := "~/K8Cli/mgmt/"+clustername+"/ResourceQuotas"
+	filePath := "~/K8Cli" + "/mgmt/" + clustername
+	mgmtpath := "~/K8Cli/mgmt/" + clustername
+	configpath := "~/K8Cli/mgmt/" + clustername + "/configs"
+	storageclasspath := "~/K8Cli/mgmt/" + clustername + "/StorageClasses"
+	namespacepath := "~/K8Cli/mgmt/" + clustername + "/NameSpaces"
+	resourcequotapath := "~/K8Cli/mgmt/" + clustername + "/ResourceQuotas"
 
-	storageclassfile := storageclasspath+"/StorageClasses.yaml"
-	namespacefile := namespacepath+"/Namespaces.yaml"
-	resourcequotafile := resourcequotapath+"/ResourceQuota.yaml"
+	storageclassfile := storageclasspath + "/StorageClasses.yaml"
+	namespacefile := namespacepath + "/Namespaces.yaml"
+	resourcequotafile := resourcequotapath + "/ResourceQuota.yaml"
 
 	//println(data)
 	_, err = os.Stat(filePath)
@@ -1145,17 +1158,17 @@ func Init(clustername string, masterurl string, kubeconfig string) (err error) {
 		fmt.Println("Token generated: ", token)
 		//type AutoGenerated struct {
 
-		type	ClusterDetails struct {
+		type ClusterDetails struct {
 			ClusterName       string `yaml:"ClusterName"`
 			MasterKey         string `yaml:"Masterkey"`
 			MasterUrl         string `yaml:"Masterurl"`
 			KubeConfig        string `yaml:"Kubeconfig"`
-			Configs            string `yaml:"Configs"`
-			StorageClassFile string  `yaml:"StorageClassfile"`
+			Configs           string `yaml:"Configs"`
+			StorageClassFile  string `yaml:"StorageClassfile"`
 			NameSpaceFile     string `yaml:"NameSpacefile"`
 			ResourceQuotaFile string `yaml:"ResourceQuotafile"`
 		}
-var data = `
+		var data = `
 ---
 ClusterDetails:
   ClusterName: {{ .ClusterName }}
@@ -1167,7 +1180,6 @@ ClusterDetails:
   NameSpaceFile: {{ .NameSpaceFile }}
   ResourceQuotaFile: {{ .ResourceQuotaFile }}
 `
-
 
 		// Create the file:
 		err = ioutil.WriteFile(filePath+"/config.tmpl", []byte(data), 0644)
@@ -1234,7 +1246,7 @@ ClusterDetails:
 	if os.IsNotExist(err) {
 		errDir := os.MkdirAll(configpath, 0755)
 
-var DefaultQuota = `
+		var DefaultQuota = `
 ---
 DefaultQuota:
   Details:
@@ -1264,7 +1276,7 @@ DefaultQuota:
    Key1: Val1
    Key2: Val2
 `
-var DefaultRole = `
+		var DefaultRole = `
 ---
 NameSpaceRoleDetails:
   AppendName: test123
@@ -1291,7 +1303,6 @@ NameSpaceRoleDetails:
 		fmt.Println("K8Cli/mgmt/<cluster>/configs exists, please manually edit file to make changes or provide new cluster name")
 	}
 
-
 	_, err = os.Stat(storageclasspath)
 	if os.IsNotExist(err) {
 
@@ -1300,7 +1311,7 @@ NameSpaceRoleDetails:
 			log.Fatal(err)
 		}
 
-var SampleStorageYaml = `
+		var SampleStorageYaml = `
 ---
 Delete:
   Enable: True
@@ -1330,22 +1341,19 @@ StorageClasses:
 		err = ioutil.WriteFile(storageclassfile, []byte(SampleStorageYaml), 0644)
 		check(err)
 
-
 	} else {
 		fmt.Println("K8Cli/mgmt/<cluster>/StorageClasses exists, please manually edit file to make changes or provide new cluster name")
 	}
 
-
 	_, err = os.Stat(namespacepath)
 	if os.IsNotExist(err) {
-
 
 		errDir := os.MkdirAll(namespacepath, 0755)
 		if errDir != nil {
 			log.Fatal(err)
 		}
 
-var SampleNameSpaceYaml = `
+		var SampleNameSpaceYaml = `
 ---
 Delete:
   Enable: True
@@ -1366,11 +1374,9 @@ NameSpace:
 		err = ioutil.WriteFile(namespacefile, []byte(SampleNameSpaceYaml), 0644)
 		check(err)
 
-
 	} else {
 		fmt.Println("K8Cli/mgmt/<cluster>/NameSpaces exists, please manually edit file to make changes or provide new cluster name")
 	}
-
 
 	_, err = os.Stat(resourcequotapath)
 	if os.IsNotExist(err) {
@@ -1379,7 +1385,7 @@ NameSpace:
 			log.Fatal(err)
 		}
 
-var SampleResourceYaml = `
+		var SampleResourceYaml = `
 ---
 ResourceQuota:
   - QuotaName: "q1"

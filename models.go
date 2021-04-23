@@ -30,3 +30,16 @@ type HelmConfig struct {
 		Password string `yaml:"password,omitempty"`
 	} `yaml:"repositories"`
 }
+
+type InitialConfigVals struct {
+	ClusterDetails struct {
+		ClusterName       string `yaml:"ClusterName"`
+		MasterKey         string `yaml:"Masterkey"`
+		MasterUrl         string `yaml:"Masterurl"`
+		KubeConfig        string `yaml:"kubeconfig"`
+		Configs           string `yaml:"Configs"`
+		StorageClassFile  string `yaml:"StorageClassesFile"`
+		NameSpaceFile     string `yaml:"NameSpaceFile"`
+		ResourceQuotaFile string `yaml:"ResourceQuotaFile"`
+	} `yaml:"ClusterDetails"`
+}

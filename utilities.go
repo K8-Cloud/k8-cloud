@@ -10,6 +10,17 @@ import (
 
 // referred from https://golangcode.com/download-a-file-from-a-url/
 
+type StrSlice []string
+
+func (list StrSlice) Has(a string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
 func DownloadFile(filepath string, url string) error {
 
 	// Get the data
@@ -31,7 +42,7 @@ func DownloadFile(filepath string, url string) error {
 	return err
 }
 
-func getFileFromURL(fileName string, fileUrl string)  {
+func getFileFromURL(fileName string, fileUrl string) {
 	err := DownloadFile(fileName, fileUrl)
 	if err != nil {
 		panic(err)
@@ -39,7 +50,6 @@ func getFileFromURL(fileName string, fileUrl string)  {
 	fmt.Println("Downloaded: " + fileUrl)
 
 }
-
 
 func makeDir(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
