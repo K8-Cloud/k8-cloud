@@ -2,6 +2,8 @@
 Cloud:
   Name: AWS
   Profile: kv3
+#  Acceesskey: AwsAccessKey
+#  Secretkey: AwsSecretKey
   Region: us-east-1
   Cluster: test-eks6
   Bucket: k8-cloud-setup-cluster
@@ -16,7 +18,7 @@ VPC:
     PrivateSubnet02Block: 10.1.5.0/24
     PrivateSubnet03Block: 10.1.6.0/24
 Master:
-  KubernetesVersion: 1.18
+  KubernetesVersion: 1.19
 #  SecurityGroupIds: sg-091340d1dd5486d40
 #  SubnetIds: [PublicSubnet02Block, PublicSubnet01Block, PrivateSubnet01Block, PrivateSubnet02Block ]
   SubnetIds: [PublicSubnet02Block, PublicSubnet01Block, PublicSubnet03Block, PrivateSubnet01Block, PrivateSubnet02Block, PrivateSubnet03Block]

@@ -102,202 +102,6 @@ type DefaultQuotaVals struct {
 //	} `yaml:"ClusterDetails"`
 //}
 
-//func main()  {
-//
-//	//https://192.168.56.2:6443
-//	var clustername, masterurl, kubeconfig, operation string
-//	var InitialConfigVals InitialConfigVals
-//
-//	flag.StringVar(&clustername, "k", "dev-cluster", "Provide cluster name")
-//	flag.StringVar(&operation, "o", "all", "Provide the operation that needs to be performed, valid inputs - namespace, storage, resourcequota, defaultquota, serviceaccount")
-//	flag.StringVar(&masterurl, "u", "https://localhost:6443", "Provide master url")
-//	flag.StringVar(&kubeconfig, "c", "~/.kube/config", "Provide path to kubeconfig")
-//
-//	filePath := "~/K8Cli"+"/mgmt/"+clustername
-//
-//	InitClusterConfig, err := ioutil.ReadFile(filePath+"/config.yaml")
-//	if err != nil {
-//		fmt.Println(err)
-//		//panic(err)
-//	}
-//	err = yaml.Unmarshal([]byte(InitClusterConfig), &InitialConfigVals)
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	flag.Parse()
-//
-//	fmt.Printf("Operation: %v\n", operation)
-//
-//
-//
-//	if operation == "all"{
-//
-//		fmt.Println("Setting up Connection")
-//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-//		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
-//
-//		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
-//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-//
-//		fmt.Println("Executing Create or Update StorageClasses")
-//		CreateorUpdateStorageClass(InitialConfigVals.ClusterDetails.StorageClassFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//		fmt.Println("Executing Create or Update NameSpaces")
-//		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//		fmt.Println("Executing Create or Update DefaultQuotas")
-//		CreateorUpdateDefaultQuota(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//		fmt.Println("Executing Create or Update ResourceQuotas")
-//		CreateorUpdateResourceQuota (InitialConfigVals.ClusterDetails.ResourceQuotaFile, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//
-//		fmt.Println("Executing Create or Update NameSpaceUsers")
-//		CreateorUpdateNameSpaceUser(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//	} else if operation == "namespace" {
-//
-//		fmt.Println("Setting up Connection")
-//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-//		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
-//
-//		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
-//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-//		fmt.Println("Executing Create or Update NameSpaces")
-//		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//	} else if operation == "storage" {
-//
-//		fmt.Println("Setting up Connection")
-//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-//		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
-//
-//		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
-//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-//
-//		fmt.Println("Executing Create or Update StorageClasses")
-//		CreateorUpdateStorageClass(InitialConfigVals.ClusterDetails.StorageClassFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//	} else if operation == "resourcequota" {
-//
-//		fmt.Println("Setting up Connection")
-//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-//		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
-//
-//		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
-//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-//
-//		fmt.Println("Executing Create or Update NameSpaces")
-//		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//		fmt.Println("Executing Create or Update DefaultQuotas")
-//		CreateorUpdateDefaultQuota(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//		fmt.Println("Executing Create or Update ResourceQuotas")
-//		CreateorUpdateResourceQuota(InitialConfigVals.ClusterDetails.ResourceQuotaFile, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//	} else if operation == "defaultquota" {
-//
-//		fmt.Println("Setting up Connection")
-//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-//		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
-//
-//		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
-//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-//
-//		fmt.Println("Executing Create or Update NameSpaces")
-//		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//		fmt.Println("Executing Create or Update DefaultQuotas")
-//		CreateorUpdateDefaultQuota(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//	} else if operation == "serviceaccount" {
-//
-//		fmt.Println("Setting up Connection")
-//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-//		connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
-//
-//		fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
-//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-//
-//		fmt.Println("Executing Create or Update NameSpaces")
-//		CreateorUpdateNameSpace(InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//		fmt.Println("Executing Create or Update NameSpaceUsers")
-//		CreateorUpdateNameSpaceUser(InitialConfigVals.ClusterDetails.Configs, InitialConfigVals.ClusterDetails.NameSpaceFile, connection, InitialConfigVals.ClusterDetails.MasterKey)
-//
-//	} else if operation == "init" {
-//
-//		fmt.Println("Initializing K8Cli")
-//
-//		fmt.Printf("ClusterName: %v\n", &clustername)
-//		fmt.Printf("masterurl: %v\n", masterurl)
-//		fmt.Printf("kubeconfig: %v\n", kubeconfig)
-//
-//		Init(clustername, masterurl, kubeconfig)
-//
-//	} else {
-//
-//		fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-//		fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-//		fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-//		fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-//		fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-//		fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-//		fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-//		fmt.Println("Provide Valid input operation")
-//	}
-//
-//}
-
-//func InitManageCluster(InitialConfigVals InitialConfigVals)  {
-//
-//	fmt.Println("Setting up Connection")
-//	fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
-//	fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
-//	connection, _ := SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl,InitialConfigVals.ClusterDetails.KubeConfig)
-//
-//	fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
-//	fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
-//	fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
-//	fmt.Printf("StorageClasses.yaml: %v\n", InitialConfigVals.ClusterDetails.StorageClassFile)
-//	fmt.Printf("Namepaces.yaml: %v\n", InitialConfigVals.ClusterDetails.NameSpaceFile)
-//	fmt.Printf("ResourceQuotas.yaml: %v\n", InitialConfigVals.ClusterDetails.ResourceQuotaFile)
-//	return connection
-//
-//}
-
 func SetupConnection(url string, kubeconfig string) (*kubernetes.Clientset, error) {
 
 	config, err := clientcmd.BuildConfigFromFlags(url, kubeconfig)
@@ -314,6 +118,7 @@ func SetupConnection(url string, kubeconfig string) (*kubernetes.Clientset, erro
 
 	return c, err
 }
+
 func CreateorUpdateStorageClass(config string, connection *kubernetes.Clientset, key string) error {
 
 	con := connection
@@ -1132,12 +937,12 @@ func V1ResourceByStorageClass(storageClass string, resourceName v1.ResourceName)
 func Init(clustername string, masterurl string, kubeconfig string) (err error) {
 
 	// Variables - host, namespace
-	filePath := "~/K8Cli" + "/mgmt/" + clustername
-	mgmtpath := "~/K8Cli/mgmt/" + clustername
-	configpath := "~/K8Cli/mgmt/" + clustername + "/configs"
-	storageclasspath := "~/K8Cli/mgmt/" + clustername + "/StorageClasses"
-	namespacepath := "~/K8Cli/mgmt/" + clustername + "/NameSpaces"
-	resourcequotapath := "~/K8Cli/mgmt/" + clustername + "/ResourceQuotas"
+	filePath := "K8Cli" + "/mgmt/" + clustername
+	mgmtpath := "K8Cli/mgmt/" + clustername
+	configpath := "K8Cli/mgmt/" + clustername + "/configs"
+	storageclasspath := "K8Cli/mgmt/" + clustername + "/StorageClasses"
+	namespacepath := "K8Cli/mgmt/" + clustername + "/NameSpaces"
+	resourcequotapath := "K8Cli/mgmt/" + clustername + "/ResourceQuotas"
 
 	storageclassfile := storageclasspath + "/StorageClasses.yaml"
 	namespacefile := namespacepath + "/Namespaces.yaml"
@@ -1226,7 +1031,7 @@ ClusterDetails:
 		}
 	} else {
 
-		fmt.Println("~/.K8Cli/mgmt/<cluster> exists, please manually edit file to make changes or provide new cluster name")
+		fmt.Println(".K8Cli/mgmt/<cluster> exists, please manually edit file to make changes or provide new cluster name")
 
 	}
 
