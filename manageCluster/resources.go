@@ -118,7 +118,6 @@ func SetupConnection(url string, kubeconfig string) (*kubernetes.Clientset, erro
 
 	return c, err
 }
-
 func CreateorUpdateStorageClass(config string, connection *kubernetes.Clientset, key string) error {
 
 	con := connection

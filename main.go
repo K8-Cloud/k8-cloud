@@ -10,14 +10,15 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"log"
 	"os"
+	"strings"
 )
 
 func setupK8sConnection(InitialConfigVals InitialConfigVals) *kubernetes.Clientset {
 	fmt.Println("Setting up Connection")
+	fmt.Println(InitialConfigVals.ClusterDetails)
 	fmt.Printf("MasterUrl: %v\n", InitialConfigVals.ClusterDetails.MasterUrl)
 	fmt.Printf("KubeConfig: %v\n", InitialConfigVals.ClusterDetails.KubeConfig)
 	connection, _ := manageCluster.SetupConnection(InitialConfigVals.ClusterDetails.MasterUrl, InitialConfigVals.ClusterDetails.KubeConfig)
-
 	fmt.Printf("ClusterName: %v\n", InitialConfigVals.ClusterDetails.ClusterName)
 	fmt.Printf("MasterKey: %v\n", InitialConfigVals.ClusterDetails.MasterKey)
 	fmt.Printf("Configs: %v\n", InitialConfigVals.ClusterDetails.Configs)
@@ -30,20 +31,20 @@ func setupK8sConnection(InitialConfigVals InitialConfigVals) *kubernetes.Clients
 
 func main() {
 	var config HelmConfig
-	var clustername, masterurl, kubeconfig string
+	var masterurl, kubeconfigfile string
 	var InitialConfigVals InitialConfigVals
 	var operation, configFile, context, name string
 	//var version bool
 
 	//flag.StringVar(&operation, "o", "all", "Provide the operation that needs to be performed, valid inputs - namespace, storage, resourcequota, defaultquota, serviceaccount")
-	flag.StringVar(&operation, "o", "cluster", "Provide whether operation needed to be performed - Cluster/Addons")
-	flag.StringVar(&configFile, "c", "cf-fmt.yaml", "Provide path to Config yaml")
+	flag.StringVar(&operation, "operation", "cluster", "Provide whether operation needed to be performed - Cluster/Addons")
+	flag.StringVar(&configFile, "config", "cf-fmt.yaml", "Provide path to Config yaml")
 	flag.StringVar(&context, "context", "minikube", "Provide kubernetes context for addon")
 	flag.StringVar(&name, "name", "backup", "backup name")
+	flag.StringVar(&kubeconfigfile, "kube-config", "", "Provide path to kubeconfig")
 	version := flag.Bool("version", false, "display version")
-	flag.StringVar(&clustername, "k", "dev-cluster", "Provide cluster name")
-	flag.StringVar(&masterurl, "u", "https://localhost:6443", "Provide master url")
-	flag.StringVar(&kubeconfig, "x", "~/.kube/config", "Provide path to kubeconfig")
+	//flag.StringVar(&clustername, "cluster-name", "dev-cluster", "Provide cluster name")
+	//flag.StringVar(&masterurl, "u", "https://localhost:6443", "Provide master url")
 	flag.Parse()
 
 	if *version {
@@ -88,19 +89,33 @@ func main() {
 	var manageOperation = StrSlice{"all", "init", "namespace", "storage", "resourcequota", "defaultquota", "serviceaccount"}
 
 	if manageOperation.Has(operation) {
-		filePath := "K8Cli" + "/mgmt/" + clustername
+		filePath := "K8Cli" + "/mgmt/" + context
 
-		InitClusterConfig, err := ioutil.ReadFile(filePath + "/config.yaml")
+		ConfigFile := strings.TrimSpace(filePath + "/config.yaml")
+		fileConfigYml, err := ioutil.ReadFile(ConfigFile)
 		if err != nil {
 			fmt.Println(err)
-			//panic(err)
 		}
-		err = yaml.Unmarshal([]byte(InitClusterConfig), &InitialConfigVals)
+
+		//var InitClusterConfigVals InitClusterConfigVals
+		err = yaml.Unmarshal([]byte(fileConfigYml), &InitialConfigVals)
 		if err != nil {
 			panic(err)
 		}
-	}
 
+
+		if kubeconfigfile == "" {
+			dirname, err := os.UserHomeDir()
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println(dirname)
+
+			kubeconfigfile = dirname + "/.kube/config"
+		}
+		masterurl = getClusterEndpoint(context, kubeconfigfile)
+
+	}
 
 	if operation == "all" {
 
@@ -162,10 +177,10 @@ func main() {
 	} else if operation == "init" {
 
 		fmt.Println("Initializing K8Cli")
-		fmt.Printf("ClusterName: %v\n", &clustername)
+		fmt.Printf("ClusterName: %v\n", &context)
 		fmt.Printf("masterurl: %v\n", masterurl)
-		fmt.Printf("kubeconfig: %v\n", kubeconfig)
-		manageCluster.Init(clustername, masterurl, kubeconfig)
+		fmt.Printf("kubeconfigfile: %v\n", kubeconfigfile)
+		manageCluster.Init(context, masterurl, kubeconfigfile)
 
 	} else {
 

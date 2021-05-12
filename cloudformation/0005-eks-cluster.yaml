@@ -10,7 +10,7 @@ Parameters:
     Default: "cluster-1"
   KubernetesVersion:
     Type: String
-    AllowedValues: [ "1.18", "1.17", "1.16", "1.15" ]
+    AllowedValues: [ "1.20", "1.19", "1.18", "1.17", "1.16" ]
     Default: "1.15"
 Resources:
   EKSServiceRole:
